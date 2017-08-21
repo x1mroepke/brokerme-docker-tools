@@ -1,0 +1,12 @@
+[Unit]
+Description=Docker Compose Run Production Enviroment
+Requires=docker.service
+After=network.target docker.service
+[Service]
+Type=simple
+WorkingDirectory=/opt/run-env/prd
+ExecStart=/opt/run-env/prd/contrib/start.sh
+ExecStop=/opt/run-env/prd/contrib/stop.sh
+Restart=always
+[Install]
+WantedBy=multi-user.target

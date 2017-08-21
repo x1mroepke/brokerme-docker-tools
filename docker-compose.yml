@@ -91,6 +91,8 @@ services:
       connector:
         aliases:
           - elk 
+    volumes:
+      - "/data/elk:/var/lib/elasticsearch"
 
   jenkins:
     build: build/docker-jenkins 
