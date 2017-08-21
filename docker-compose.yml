@@ -1,0 +1,114 @@
+version: '3'
+networks:
+ connector:
+   driver: bridge
+
+services:
+  postgres:
+    image: postgres:9.6
+    container_name: postgres
+    hostname: postgres
+    ports:
+      - "5433:5432"
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_PASSWORD=zabbix
+      - TZ=America/Sao_Paulo
+    volumes:
+      - /data/postgres:/var/lib/postgresql/data
+    networks:
+      connector:
+        aliases:
+          - postgres
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:latest
+    container_name: zabbix-server
+    hostname: zabbix-server
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      - DB_SERVER_HOST=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=zabbix
+      - TZ=America/Sao_Paulo
+    networks:
+      connector:
+        aliases:
+          - zabbix-server
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:latest
+    container_name: zabbix-web
+    hostname: zabbix-web
+    links: 
+      - postgres
+      - zabbix-server
+    depends_on: 
+      - postgres
+      - zabbix-server
+    ports:
+      - "80:80"
+      - "443:443"
+      - "10051:10051"
+    expose:
+      - "10051"
+    environment:
+      - DB_SERVER_HOST=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=zabbix
+      - PHP_TZ=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+    networks:
+      connector:
+        aliases:
+          - zabbix-web
+
+  elk:
+    build: build/docker-elk 
+    container_name: elk
+    hostname: elk
+    ports:
+      - "4560:4560"
+      - "5601:5601"
+      - "5044:5044"
+      - "8200:8200"
+      - "8300:8300"
+    expose:
+      - "4560"
+      - "5601"
+      - "5044"
+      - "8200"
+      - "8300"
+    environment:
+      - TZ=America/Sao_Paulo
+    networks:
+      connector:
+        aliases:
+          - elk 
+
+  jenkins:
+    build: build/docker-jenkins 
+    container_name: jenkins
+    hostname: jenkins
+    ports:
+      - "8080:8080"
+      - "50001:50001"
+    expose:
+      - "50001"
+    environment:
+      - TZ=America/Sao_Paulo
+      - JENKINS_SLAVE_AGENT_PORT=50001
+      - JAVA_OPTS=-Dhudson.footerURL=http://build.brokerme.club
+    networks:
+      connector:
+        aliases:
+          - jenkins
+    volumes:
+      - "/data/jenkins:/data/jenkins"
+      - "/var/run/docker.sock:/var/run/docker.sock"
